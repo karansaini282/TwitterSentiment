@@ -1,7 +1,6 @@
 import java.util.Properties;
-import java.util.Scanner; 
-import java.util.List;
 import java.io.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import twitter4j.*;
 import twitter4j.conf.*;
@@ -16,26 +15,15 @@ public class TwitterSource implements Runnable{
     private String consumerSecret;
     private String accessToken;
     private String accessTokenSecret;
-    private Twitter twitter;
     private String searchQuery;
-    private long sinceId;
-    private long maxId;
-    
-    public TwitterSource()
-    {
-    	this.sinceId=0;
-    }
-    
-    public TwitterSource(long sinceId)
-    {
-    	this.sinceId=sinceId;
-    }
     
     public void run(){
+    
+    try{
 	Properties prop = new Properties();
 	InputStream input = null;
 
-	try {
+		LinkedBlockingQueue<Status> queue = new LinkedBlockingQueue<Status>(1000);
 
         Properties configProperties = new Properties();
         configProperties.put("bootstrap.servers","localhost:9092");
@@ -55,7 +43,7 @@ public class TwitterSource implements Runnable{
 		accessToken=prop.getProperty("accessToken");
         accessTokenSecret=prop.getProperty("accessTokenSecret");
         searchQuery=prop.getProperty("searchQuery");
-        
+        input.close();
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.setOAuthConsumerKey(consumerKey);
@@ -65,71 +53,71 @@ public class TwitterSource implements Runnable{
         cb.setJSONStoreEnabled(true);
         cb.setIncludeEntitiesEnabled(true);
  
-        twitter = new TwitterFactory(cb.build()).getInstance();
+        TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
+        StatusListener listener = new StatusListener() {
+          
+           @Override
+           public void onStatus(Status status) {      
+        	   queue.offer(status);
+           }
+           
+           
+           @Override
+           public void onDeletionNotice(StatusDeletionNotice x) {
+              //System.out.println("Got a status deletion notice id:" + x.getStatusId());
+           }
+           
+           @Override
+           public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
+              // System.out.println("Got track limitation notice:" + num-berOfLimitedStatuses);
+           }
 
-        //List<String> items = Arrays.asList(str.split("\\s*,\\s*"));
-       
-        try {
-            Query query = new Query(searchQuery);
-         	query.setLang("en");
-         	if(sinceId!=0)
-         	{
-         		query.setSinceId(sinceId);
-         	}         	
-            QueryResult result;
-            result = twitter.search(query);
-            this.maxId=result.getMaxId();
-            List<Status> tweets = result.getTweets();
-            for (Status tweet : tweets) {
-                System.out.println("Id: " + tweet.getId() + " @" + tweet.getUser().getScreenName() + " - " + tweet.getText());
-                ProducerRecord<String, String> rec = new ProducerRecord<String, String>("brandData",tweet.getText());
-                producer.send(rec);
+           @Override
+           public void onScrubGeo(long userId, long upToStatusId) {
+              // System.out.println("Got scrub_geo event userId:" + userId + "upToStatusId:" + upToStatusId);
+           }      
+           
+           @Override
+           public void onStallWarning(StallWarning warning) {
+              // System.out.println("Got stall warning:" + warning);
+           }
+           
+           @Override
+           public void onException(Exception ex) {
+              ex.printStackTrace();
+           }   
+        
+        };
+        twitterStream.addListener(listener);
+        
+        FilterQuery query = new FilterQuery().track(searchQuery);
+        twitterStream.filter(query);
+        
+        while(true) {
+            Status ret = queue.poll();
+            
+            if (ret == null) {
+               Thread.sleep(100);
+            }else {             
+                  System.out.println("@" + ret.getUser().getScreenName() +": " + ret.getText());
+                  producer.send(new ProducerRecord<String, String>(
+                     "brandData",ret.getText()));
             }
-            producer.close();
-            //System.exit(0);
-        } catch (TwitterException te) {
-            te.printStackTrace();
-            System.out.println("Failed to search tweets: " + te.getMessage());
-            System.exit(-1);
-        }
+         }
 
-
-
-	} catch (IOException ex) {
-		ex.printStackTrace();
-	} finally {
-		if (input != null) {
-			try {
-				input.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
+    }
+    catch(Exception e)
+    {
+    	e.printStackTrace();
+    }
   }
-   
-   public long getMaxId()
-   {
-	   return this.maxId;
-   }
     
    public static void main(String[] args) {
-          Scanner scan = new Scanner(System.in);
-          String msg;
-          long maxId=0;
 	      try {
-	    	 do{ 
-	         TwitterSource obj = new TwitterSource(maxId);
+	         TwitterSource obj = new TwitterSource();
 	         Thread t=new Thread(obj);
 	         t.start();
 	         t.join();
-	         maxId=obj.getMaxId();
-	         System.out.println("MaxId: "+String.valueOf(maxId));
-	         System.out.println("Continue: ");
-             msg = scan.next();
-	    	 }while(!msg.equals("No"));
-	    	 scan.close();
 	      }catch(Exception e) {
 	         e.printStackTrace();
 	      }
