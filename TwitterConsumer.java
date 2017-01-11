@@ -33,7 +33,8 @@ import java.util.Date;
 import scala.Tuple2;
 
 public class TwitterConsumer implements Runnable{
-    private static int sentSum;
+    private static int sentSumPos;
+    private static int sentSumNeg;
     private static int sentCount;
     private static Map<String,Integer> dict;
 
@@ -41,7 +42,8 @@ public class TwitterConsumer implements Runnable{
     {
     	try
     	{
-	    	sentSum=0;
+	    	sentSumPos=0;
+	    	sentSumNeg=0;
 	    	sentCount=0;
 	        dict=new HashMap<String,Integer>();
 	        
@@ -75,44 +77,53 @@ public class TwitterConsumer implements Runnable{
     	}
     }
     
-    public static final Function<String,Integer> mapFunction=new Function<String,Integer>()
+    public static final Function<String,Tuple2<Integer,Integer>> mapFunction=new Function<String,Tuple2<Integer,Integer>>()
 	{
 		@Override
-		public Integer call(String tweet)
+		public Tuple2<Integer,Integer> call(String tweet)
 		{
 			System.out.println("Tweet:"+tweet);
 			String[] words=tweet.split(" ");
-			sentSum=0;			
+			sentSumPos=0;
+			sentSumNeg=0;
         	for (String word:words)
         	{
         		if(dict.containsKey(word.toLowerCase()))
         		{
         		    sentCount++;
-        			sentSum+=dict.get(word.toLowerCase());        			
+        			if(dict.get(word.toLowerCase())==1)
+        			{
+        				sentSumPos++;
+        			}
+        			else
+        			{
+        				sentSumNeg++;
+        			}
         			System.out.println("word: " + word);        			        			
         		}
         	}
-        	System.out.println("sentSum: " + sentSum);
-			return sentSum;
+        	System.out.println("sentSumPos: " + sentSumPos);
+        	System.out.println("sentSumNeg: " + sentSumNeg);
+			return new Tuple2<Integer,Integer>(sentSumPos,sentSumNeg);
 		}
 	};
 	
-    public static final Function<Tuple2<String,Integer>,Row> rowFunction=new Function<Tuple2<String,Integer>,Row>()
+    public static final Function<Tuple2<String,Tuple2<Integer,Integer>>,Row> rowFunction=new Function<Tuple2<String,Tuple2<Integer,Integer>>,Row>()
 	{
 		@Override
-		public Row call(Tuple2<String,Integer> a)
+		public Row call(Tuple2<String,Tuple2<Integer,Integer>> a)
 		{
 	        Date date = new Date();	        
-			return RowFactory.create("topicName",a._2.toString(),new Timestamp(date.getTime()).toString());
+			return RowFactory.create("topicName",a._2._1.toString(),a._2._2.toString(),new Timestamp(date.getTime()).toString());
 		}
 	};
 	
-    public static final Function2<Integer,Integer,Integer> reduceFunction=new Function2<Integer,Integer,Integer>()
+    public static final Function2<Tuple2<Integer,Integer>,Tuple2<Integer,Integer>,Tuple2<Integer,Integer>> reduceFunction=new Function2<Tuple2<Integer,Integer>,Tuple2<Integer,Integer>,Tuple2<Integer,Integer>>()
 	{
 		@Override
-		public Integer call(Integer a,Integer b)
+		public Tuple2<Integer,Integer> call(Tuple2<Integer,Integer> a,Tuple2<Integer,Integer> b)
 		{			
-			return a+b;
+			return new Tuple2<Integer,Integer>(a._1+b._1,a._2+b._2);
 		}
 	};
     
@@ -134,7 +145,7 @@ public class TwitterConsumer implements Runnable{
         connectionProperties.put("password", "admin");
         SQLContext sqlContext = new SQLContext(sc);
      // The schema is encoded in a string
-        String schemaString = "topic sentiment timestamp";
+        String schemaString = "topic sentimentPos sentimentNeg timestamp";
 
         // Generate the schema based on the string of schema
         List<StructField> fields = new ArrayList<>();
@@ -149,7 +160,7 @@ public class TwitterConsumer implements Runnable{
                     
         directKafkaStream.mapValues(mapFunction).reduceByKey(reduceFunction).map(rowFunction).foreachRDD(rdd -> {
             Dataset<Row> df = sqlContext.createDataFrame(rdd,schema).na().drop();                    
-            df.select("topic","sentiment","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
+            df.select("topic","sentimentPos","sentimentNeg","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
         	rdd.foreach(record -> {
 
             });            
