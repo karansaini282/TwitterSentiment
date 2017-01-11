@@ -51,8 +51,8 @@ public class TwitterSource implements Runnable{
 
 		// get the property value and print it out
         consumerKey=prop.getProperty("consumerKey");
-		consumerSecret=prop.getProperty("consumerSecret");
-		accessToken=prop.getProperty("accessToken");
+	consumerSecret=prop.getProperty("consumerSecret");
+	accessToken=prop.getProperty("accessToken");
         accessTokenSecret=prop.getProperty("accessTokenSecret");
         searchQuery=prop.getProperty("searchQuery");
         
