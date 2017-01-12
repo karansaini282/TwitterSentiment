@@ -16,6 +16,7 @@ public class TwitterSource implements Runnable{
     private String accessToken;
     private String accessTokenSecret;
     private String searchQuery;
+    private String[] keywords;
     
     public void run(){
     
@@ -32,17 +33,18 @@ public class TwitterSource implements Runnable{
 
         Producer<String, String> producer = new KafkaProducer<String, String>(configProperties);
 		
-		input = getClass().getClassLoader().getResourceAsStream("twitter.properties");
+	input = getClass().getClassLoader().getResourceAsStream("twitter.properties");
 
-		// load a properties file
-		prop.load(input);
+	// load a properties file
+	prop.load(input);
 
-		// get the property value and print it out
+	// get the property value and print it out
         consumerKey=prop.getProperty("consumerKey");
-		consumerSecret=prop.getProperty("consumerSecret");
-		accessToken=prop.getProperty("accessToken");
+	consumerSecret=prop.getProperty("consumerSecret");
+	accessToken=prop.getProperty("accessToken");
         accessTokenSecret=prop.getProperty("accessTokenSecret");
         searchQuery=prop.getProperty("searchQuery");
+        keywords=searchQuery.split(" OR ");
         input.close();
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
@@ -90,19 +92,34 @@ public class TwitterSource implements Runnable{
         };
         twitterStream.addListener(listener);
         
-        FilterQuery query = new FilterQuery().track(searchQuery);
+        FilterQuery query = new FilterQuery().track(keywords);
         twitterStream.filter(query);
         
         while(true) {
-            Status ret = queue.poll();
-            
-            if (ret == null) {
-               Thread.sleep(100);
-            }else {             
-                  System.out.println("@" + ret.getUser().getScreenName() +": " + ret.getText());
-                  producer.send(new ProducerRecord<String, String>(
-                     "brandData",ret.getText()));
-            }
+        	if(queue.size()>=100)
+        	{
+        		while(queue.size()>=50)
+        		{
+                    Status ret = queue.poll();
+                    
+                    if (ret == null) {
+                       Thread.sleep(100);
+                    }else {
+                    	  for(String keyword:keywords)
+                    	  {
+                    		  if(ret.getText().toLowerCase().contains(keyword))
+                    		  {
+                                  System.out.println("@" + ret.getUser().getScreenName() +": " + ret.getText());
+                                  producer.send(new ProducerRecord<String, String>(keyword,ret.getText()));  
+                    		  }
+                    	  }
+                    }
+        		}
+        	}
+        	else
+        	{
+        		Thread.sleep(100);
+        	}
          }
 
     }
