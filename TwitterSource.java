@@ -18,6 +18,7 @@ public class TwitterSource implements Runnable{
     private String accessTokenSecret;
     private Twitter twitter;
     private String searchQuery;
+    private String[] keywords;
     private long sinceId;
     private long maxId;
     
@@ -51,11 +52,11 @@ public class TwitterSource implements Runnable{
 
 		// get the property value and print it out
         consumerKey=prop.getProperty("consumerKey");
-	consumerSecret=prop.getProperty("consumerSecret");
-	accessToken=prop.getProperty("accessToken");
+		consumerSecret=prop.getProperty("consumerSecret");
+	    accessToken=prop.getProperty("accessToken");
         accessTokenSecret=prop.getProperty("accessTokenSecret");
         searchQuery=prop.getProperty("searchQuery");
-        
+        keywords=searchQuery.split(" OR ");
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.setOAuthConsumerKey(consumerKey);
@@ -78,12 +79,19 @@ public class TwitterSource implements Runnable{
          	}         	
             QueryResult result;
             result = twitter.search(query);
-            this.maxId=result.getMaxId();
+            this.maxId=result.getMaxId();            
             List<Status> tweets = result.getTweets();
-            for (Status tweet : tweets) {
-                System.out.println("Id: " + tweet.getId() + " @" + tweet.getUser().getScreenName() + " - " + tweet.getText());
-                ProducerRecord<String, String> rec = new ProducerRecord<String, String>("brandData",tweet.getText());
-                producer.send(rec);
+            for (Status tweet : tweets) {                           
+                for(String keyword:keywords)
+                {
+                	if(tweet.getText().toLowerCase().contains(keyword))
+                	{
+                		System.out.println("Id: " + tweet.getId() + " @" + tweet.getUser().getScreenName() + " - " + tweet.getText());
+                		ProducerRecord<String, String> rec = new ProducerRecord<String, String>(keyword,tweet.getText());
+                		producer.send(rec);
+                	}
+                }
+                                
             }
             producer.close();
             //System.exit(0);
