@@ -71,7 +71,7 @@ public class TwitterSource implements Runnable{
         try {
             Query query = new Query(searchQuery);
 	    query.setLang("en");
-	    if(sinceId!=0)
+	    if(sinceId != 0)
 	    {
 		query.setSinceId(sinceId);
 	    }         	
