@@ -67,8 +67,6 @@ public class TwitterSource implements Runnable{
         cb.setIncludeEntitiesEnabled(true);
  
         twitter = new TwitterFactory(cb.build()).getInstance();
-
-        //List<String> items = Arrays.asList(str.split("\\s*,\\s*"));
        
         try {
             Query query = new Query(searchQuery);
