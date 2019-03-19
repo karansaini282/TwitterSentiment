@@ -48,9 +48,9 @@ public class TwitterConsumer implements Runnable{
     {
     	try
     	{
-	    	sentSumPos=0;
-	    	sentSumNeg=0;
-	        dict=new HashMap<String,Integer>();
+	    	sentSumPos = 0;
+	    	sentSumNeg = 0;
+	        dict = new HashMap<String,Integer>();
 	        
 	    	File dir = new File(".");
 	    	File fin = new File(dir.getCanonicalPath() + File.separator + "src/good.txt");
@@ -100,8 +100,8 @@ public class TwitterConsumer implements Runnable{
 		{
 			System.out.println("Tweet:"+tweet);
 			String[] words=tweet.split(" ");
-			sentSumPos=0;
-			sentSumNeg=0;
+			sentSumPos = 0;
+			sentSumNeg = 0;
         	for (String word:words)
         	{
         		if(dict.containsKey(word.toLowerCase()))
@@ -162,34 +162,21 @@ public class TwitterConsumer implements Runnable{
         
         Map<String, String> kafkaParams = new HashMap<>();
         kafkaParams.put("metadata.broker.list", "localhost:9092");
-        
-        //Set<String> topics = Collections.singleton("brandData");
 
         Properties connectionProperties = new Properties();
         connectionProperties.put("user", "root");
         connectionProperties.put("password", "admin");
         SQLContext sqlContext = new SQLContext(sc);
-     // The schema is encoded in a string
+        // The schema is encoded in a string
         String schemaString = "topic sentimentPos sentimentNeg timestamp";
 
         // Generate the schema based on the string of schema
         List<StructField> fields = new ArrayList<>();
         for (String fieldName : schemaString.split(" ")) {
-          StructField field = DataTypes.createStructField(fieldName, DataTypes.StringType, true);
-          fields.add(field);
+        	StructField field = DataTypes.createStructField(fieldName, DataTypes.StringType, true);
+        	fields.add(field);
         }
         StructType schema = DataTypes.createStructType(fields);
-        
-        /*JavaPairInputDStream<String, String> directKafkaStream = KafkaUtils.createDirectStream(ssc,
-                String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topics);
-                
-        directKafkaStream.mapValues(mapFunction).reduceByKey(reduceFunction).map(rowFunction).foreachRDD(rdd -> {
-            Dataset<Row> df = sqlContext.createDataFrame(rdd,schema).na().drop();                    
-            df.select("topic","sentimentPos","sentimentNeg","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
-        	rdd.foreach(record -> {
-
-            });            
-        });*/      
         
     	Properties prop = new Properties();
     	InputStream input = null;
@@ -204,14 +191,14 @@ public class TwitterConsumer implements Runnable{
         	topicAndPartition.put(new TopicAndPartition(keyword, 0), 1L);
         }        
 
-        KafkaUtils.createDirectStream(ssc, String.class, String.class, StringDecoder.class, StringDecoder.class, Tuple2.class, kafkaParams, topicAndPartition, MessageAndMetadataFunction).mapToPair(createPair)
+        KafkaUtils.createDirectStream(ssc, String.class, String.class, StringDecoder.class, StringDecoder.class, Tuple2.class, kafkaParams, topicAndPartition, MessageAndMetadataFunction)
+	.mapToPair(createPair)
         .mapValues(mapFunction).reduceByKey(reduceFunction).map(rowFunction).foreachRDD(rdd -> {
-            Dataset<Row> df = sqlContext.createDataFrame(rdd,schema).na().drop();                    
-            df.select("topic","sentimentPos","sentimentNeg","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
-        	rdd.foreach(record -> {
-
-            });            
-        });          ;
+         	Dataset<Row> df = sqlContext.createDataFrame(rdd,schema).na().drop();                    
+         	df.select("topic","sentimentPos","sentimentNeg","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
+         	rdd.foreach(record -> {
+            	});            
+        });
         
         ssc.start();
         ssc.awaitTermination();
@@ -225,9 +212,9 @@ public class TwitterConsumer implements Runnable{
     public static void main(String[] args) 
     {
     	try
-	    {
+	{
 	        TwitterConsumer obj = new TwitterConsumer();
-	        Thread t=new Thread(obj);
+	        Thread t = new Thread(obj);
 	        t.start();
 	        t.join();
     	}
