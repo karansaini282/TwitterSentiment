@@ -72,11 +72,11 @@ public class TwitterSource implements Runnable{
        
         try {
             Query query = new Query(searchQuery);
-         	query.setLang("en");
-         	if(sinceId!=0)
-         	{
-         		query.setSinceId(sinceId);
-         	}         	
+	    query.setLang("en");
+	    if(sinceId!=0)
+	    {
+		query.setSinceId(sinceId);
+	    }         	
             QueryResult result;
             result = twitter.search(query);
             this.maxId=result.getMaxId();            
