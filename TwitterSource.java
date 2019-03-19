@@ -127,10 +127,10 @@ public class TwitterSource implements Runnable{
 	      try {
 	    	 do{ 
 	         TwitterSource obj = new TwitterSource(maxId);
-	         Thread t=new Thread(obj);
+	         Thread t = new Thread(obj);
 	         t.start();
 	         t.join();
-	         maxId=obj.getMaxId();
+	         maxId = obj.getMaxId();
 	         System.out.println("MaxId: "+String.valueOf(maxId));
 	         System.out.println("Continue: ");
 		 msg = scan.next();
