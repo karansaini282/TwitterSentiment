@@ -45,15 +45,15 @@ public class TwitterSource implements Runnable{
 
         Producer<String, String> producer = new KafkaProducer<String, String>(configProperties);
 		
-		input = getClass().getClassLoader().getResourceAsStream("twitter.properties");
+	input = getClass().getClassLoader().getResourceAsStream("twitter.properties");
 
-		// load a properties file
-		prop.load(input);
+	// load a properties file
+	prop.load(input);
 
-		// get the property value and print it out
+	// get the property value and print it out
         consumerKey=prop.getProperty("consumerKey");
-		consumerSecret=prop.getProperty("consumerSecret");
-	    accessToken=prop.getProperty("accessToken");
+	consumerSecret=prop.getProperty("consumerSecret");
+    	accessToken=prop.getProperty("accessToken");
         accessTokenSecret=prop.getProperty("accessTokenSecret");
         searchQuery=prop.getProperty("searchQuery");
         keywords=searchQuery.split(" OR ");
