@@ -84,11 +84,10 @@ public class TwitterConsumer implements Runnable{
     
 	public static final Function<MessageAndMetadata<String, String>, Tuple2> MessageAndMetadataFunction = new Function<MessageAndMetadata<String, String>, Tuple2>()
 	{
-	@Override
-	public Tuple2<String,String> call(MessageAndMetadata<String, String> v1)
-		throws Exception {            	
-	    return new Tuple2(v1.topic(),v1.message());
-	}
+		@Override
+		public Tuple2<String,String> call(MessageAndMetadata<String, String> v1) throws Exception {            	
+			return new Tuple2(v1.topic(),v1.message());
+		}
 	};
  
 	public static final PairFunction<Tuple2,String,String> createPair = new PairFunction<Tuple2,String,String>()
@@ -109,23 +108,23 @@ public class TwitterConsumer implements Runnable{
 			String[] words=tweet.split(" ");
 			sentSumPos = 0;
 			sentSumNeg = 0;
-        	for (String word:words)
-        	{
-        		if(dict.containsKey(word.toLowerCase()))
-        		{
-        			if(dict.get(word.toLowerCase())==1)
-        			{
-        				sentSumPos++;
-        			}
-        			else
-        			{
-        				sentSumNeg++;
-        			}
-        			System.out.println("word: " + word);        			        			
-        		}
-        	}
-        	System.out.println("sentSumPos: " + sentSumPos);
-        	System.out.println("sentSumNeg: " + sentSumNeg);
+			for (String word:words)
+			{
+				if(dict.containsKey(word.toLowerCase()))
+				{
+					if(dict.get(word.toLowerCase())==1)
+					{
+						sentSumPos++;
+					}
+					else
+					{
+						sentSumNeg++;
+					}
+					System.out.println("word: " + word);        			        			
+				}
+			}
+			System.out.println("sentSumPos: " + sentSumPos);
+			System.out.println("sentSumNeg: " + sentSumNeg);
 			return new Tuple2<Integer,Integer>(sentSumPos,sentSumNeg);
 		}
 	};
