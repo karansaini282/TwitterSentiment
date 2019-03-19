@@ -24,12 +24,12 @@ public class TwitterSource implements Runnable{
     
     public TwitterSource()
     {
-    	this.sinceId=0;
+    	this.sinceId = 0;
     }
     
     public TwitterSource(long sinceId)
     {
-    	this.sinceId=sinceId;
+    	this.sinceId = sinceId;
     }
     
     public void run(){
@@ -77,7 +77,7 @@ public class TwitterSource implements Runnable{
 	    }         	
             QueryResult result;
             result = twitter.search(query);
-            this.maxId=result.getMaxId();            
+            this.maxId = result.getMaxId();            
             List<Status> tweets = result.getTweets();
             for (Status tweet : tweets) {                           
                 for(String keyword:keywords)
@@ -123,7 +123,7 @@ public class TwitterSource implements Runnable{
    public static void main(String[] args) {
           Scanner scan = new Scanner(System.in);
           String msg;
-          long maxId=0;
+          long maxId = 0;
 	      try {
 	    	 do{ 
 	         TwitterSource obj = new TwitterSource(maxId);
