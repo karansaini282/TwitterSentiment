@@ -192,7 +192,8 @@ public class TwitterConsumer implements Runnable{
 
 		KafkaUtils.createDirectStream(ssc, String.class, String.class, StringDecoder.class, StringDecoder.class, Tuple2.class, kafkaParams, topicAndPartition, MessageAndMetadataFunction)
 		.mapToPair(createPair)
-		.mapValues(mapFunction).reduceByKey(reduceFunction).map(rowFunction).foreachRDD(rdd -> {
+		.mapValues(mapFunction)
+		.reduceByKey(reduceFunction).map(rowFunction).foreachRDD(rdd -> {
 			Dataset<Row> df = sqlContext.createDataFrame(rdd,schema).na().drop();                    
 			df.select("topic","sentimentPos","sentimentNeg","timestamp").write().mode("append").jdbc("jdbc:mysql://localhost:3306/db1?autoReconnect=true&useSSL=false", "db1.twitterSentiment", connectionProperties);
 			rdd.foreach(record -> {
