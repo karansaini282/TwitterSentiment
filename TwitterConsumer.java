@@ -148,10 +148,6 @@ public class TwitterConsumer implements Runnable{
 			return RowFactory.create(a._1,a._2._1.toString(),a._2._2.toString(),new Timestamp(date.getTime()).toString());
 		}
 	};
-	
-
-	
-
     
 	public void run()
 	{
