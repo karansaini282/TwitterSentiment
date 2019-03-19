@@ -133,7 +133,7 @@ public class TwitterSource implements Runnable{
 	         maxId=obj.getMaxId();
 	         System.out.println("MaxId: "+String.valueOf(maxId));
 	         System.out.println("Continue: ");
-             msg = scan.next();
+		 msg = scan.next();
 	    	 }while(!msg.equals("No"));
 	    	 scan.close();
 	      }catch(Exception e) {
